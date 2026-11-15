@@ -7,6 +7,13 @@ and can no longer be licensed.
 MEGuard runs entirely on your Windows mail server, in one folder (`C:\MEGuard`). No Linux, no cloud
 service, no paid components, no subscription.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/desktop-dark-log.webp">
+  <img src="docs/desktop-light-log.webp" alt="MEGuard log viewer with per-message spam decisions" width="800">
+</picture>
+
+Website: **https://meguard.virtua.hu**
+
 ---
 
 ## What it does
@@ -29,6 +36,11 @@ service, no paid components, no subscription.
   RIR delegation files and applied as Windows Firewall rules; port 25 and webmail stay open. Off by default.
 - **Resources**: CPU / memory / disk load, mail queues, MailEnable service status and restart buttons.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/desktop-dark-attacks.webp">
+  <img src="docs/desktop-light-attacks.webp" alt="MEGuard attacks page: failed logins and bans per protocol" width="800">
+</picture>
+
 **Protection and self-healing**
 - **IPBan** (DigitalRuby, MIT) installer, preconfigured for MailEnable SMTP/POP/IMAP and RDP, with escalating bans.
 - **Health watchdog** every 3 minutes: restarts a hung SpamAssassin or a stopped mail service and e-mails you.
@@ -38,7 +50,9 @@ service, no paid components, no subscription.
 (`tools\mdb_export.cmd` + `tools\import_mxscan.php`) and can run next to MxScan until you switch over.
 MxScan is not required: on a fresh MailEnable server MEGuard starts with SpamAssassin's rules and its built-in defaults.
 
-**Not included:** MEGuard does not scan for viruses. Keep MailEnable's antivirus filter or your antivirus product.
+**Not included yet:** MEGuard does not scan for viruses. Planned for 0.4.0: optional attachment scanning with the
+Microsoft Defender engine built into Windows Server, plus blocking of dangerous file types. Until then, keep
+MailEnable's antivirus filter or your antivirus product.
 Disable MailEnable's own SpamAssassin and Bayesian filters once MEGuard filters your mail (see INSTALL.md).
 
 ## Requirements
