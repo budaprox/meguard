@@ -84,6 +84,14 @@ try {
             flash(t('att.unbanned', ['ip' => (string)$_POST['ip']]));
             break;
 
+        case 'wl_add':
+        case 'wl_del':
+            require_once dirname(__DIR__) . '/lib/IPBanInfo.php';
+            $wl = trim((string)($_POST['ip'] ?? ''));
+            IPBanInfo::whitelistSet($wl, $do === 'wl_add');
+            flash(t($do === 'wl_add' ? 'att.wl_added' : 'att.wl_removed', ['ip' => $wl]));
+            break;
+
         case 'cfg_dismiss':
             // hide the notice bar – until the list of missing settings changes (next version)
             Db::meta('cfg_dismiss', (string)($_POST['sig'] ?? ''));

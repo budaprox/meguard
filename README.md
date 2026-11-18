@@ -76,7 +76,7 @@ Until the last step your mail flow is not touched, and undoing it is a single fi
 
 ## Status
 
-Version 0.3.0 – the first public release. MEGuard has been filtering mail in production on two
+Version 0.3.1 (0.3.0 was the first public release). MEGuard has been filtering mail in production on two
 MailEnable servers (Standard and Professional) since November 2026. Please report problems and
 false positives in the issue tracker.
 

@@ -123,6 +123,59 @@ final class IPBanInfo
         if (file_put_contents($f, $ip . "\r\n", FILE_APPEND | LOCK_EX) === false) throw new RuntimeException('not writable: ' . $f);
     }
 
+    /** Is this a valid IP address or CIDR range? */
+    public static function validEntry(string $e): bool
+    {
+        if (filter_var($e, FILTER_VALIDATE_IP)) return true;
+        if (preg_match('~^([0-9A-Fa-f:.]+)/(\d{1,3})$~', $e, $m) && filter_var($m[1], FILTER_VALIDATE_IP)) {
+            return (int)$m[2] <= (str_contains($m[1], ':') ? 128 : 32);
+        }
+        return false;
+    }
+
+    /** IPBan whitelist (ipban.config, key "Whitelist") */
+    public static function whitelist(): array
+    {
+        $f = meg_path(self::dir(), 'ipban.config');
+        if (!is_file($f)) return [];
+        $x = @simplexml_load_file($f);
+        if (!$x) return [];
+        foreach ($x->appSettings->add ?? [] as $a) {
+            if ((string)$a['key'] === 'Whitelist') {
+                return array_values(array_filter(array_map('trim', explode(',', (string)$a['value'])), 'strlen'));
+            }
+        }
+        return [];
+    }
+
+    /** Add ($add = true) or remove an entry. Adding also lifts an existing ban. */
+    public static function whitelistSet(string $entry, bool $add): void
+    {
+        $entry = trim($entry);
+        if (!self::validEntry($entry)) throw new RuntimeException('invalid IP address or range: ' . $entry);
+        $f = meg_path(self::dir(), 'ipban.config');
+        $doc = new DOMDocument();
+        $doc->preserveWhiteSpace = true;
+        if (!is_file($f) || !$doc->load($f)) throw new RuntimeException('not readable: ' . $f);
+        $xp = new DOMXPath($doc);
+        $node = $xp->query('/configuration/appSettings/add[@key="Whitelist"]')->item(0);
+        if (!$node) {
+            $as = $xp->query('/configuration/appSettings')->item(0);
+            if (!$as) throw new RuntimeException('unexpected ipban.config structure');
+            $node = $doc->createElement('add');
+            $node->setAttribute('key', 'Whitelist');
+            $node->setAttribute('value', '');
+            $as->appendChild($node);
+        }
+        $list = array_values(array_filter(array_map('trim', explode(',', $node->getAttribute('value'))), 'strlen'));
+        $list = array_values(array_filter($list, fn($x) => strcasecmp($x, $entry) !== 0));
+        if ($add) $list[] = $entry;
+        $node->setAttribute('value', implode(',', $list));
+        @copy($f, $f . '.bak-meguard');
+        if ($doc->save($f) === false) throw new RuntimeException('not writable: ' . $f);
+        if ($add && filter_var($entry, FILTER_VALIDATE_IP)) self::unban($entry);
+    }
+
     /** Source name -> short label */
     public static function label(string $source): string
     {

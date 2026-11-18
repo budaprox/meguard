@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.1
+
+- **Whitelist card on the Attacks page:** add or remove IP addresses and CIDR ranges that the firewall
+  (IPBan) must never ban – e.g. the shared exit address of an office or school. Adding an address also lifts
+  an existing ban. Changes go into `ipban.config` (a backup is kept as `ipban.config.bak-meguard`).
+- **Sortable Log page:** click the Time, Result or Score column header to sort; click again to reverse.
+  Sorting is done by the server, so it covers the whole filtered result (not only the visible page) and
+  survives the search box, the date filter and "More" paging. Result ↓ = most severe first;
+  Score ↓ = highest first, rows without a score always last.
+
 ## 0.3.0 – first public release
 
 - **English first:** interface, `config.sample.php`, tool output, alerts, code comments and documentation

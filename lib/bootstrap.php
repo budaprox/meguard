@@ -3,7 +3,7 @@
 
 declare(strict_types=1);
 
-define('MEG_VERSION', '0.3.0');
+define('MEG_VERSION', '0.3.1');
 define('MEG_ROOT', dirname(__DIR__));
 
 function meg_config(): array

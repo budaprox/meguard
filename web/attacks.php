@@ -103,6 +103,23 @@ $colors = ['RDP' => 'rdp', 'SMTP' => 'smtp', 'IMAP' => 'imap', 'POP' => 'pop'];
   </div>
 </section>
 
+<section class="card wlbox">
+  <h2><?= h(t('att.wl_title')) ?> <small class="muted"><?= count($wlist = IPBanInfo::whitelist()) ?></small></h2>
+  <p class="muted small"><?= h(t('att.wl_help')) ?></p>
+  <form method="post" action="action.php" class="bsearch"><?= csrf_field() ?><input type="hidden" name="do" value="wl_add">
+    <input type="text" name="ip" required class="mono" placeholder="<?= h(t('att.wl_ph')) ?>">
+    <button><?= h(t('att.wl_add')) ?></button>
+  </form>
+  <?php if ($wlist): ?>
+  <div class="wlchips">
+    <?php foreach ($wlist as $w): ?>
+      <form method="post" action="action.php" class="inline wlchip"><?= csrf_field() ?><input type="hidden" name="do" value="wl_del"><input type="hidden" name="ip" value="<?= h($w) ?>">
+        <span class="mono"><?= h($w) ?></span> <button class="small" title="<?= h(t('att.wl_del')) ?>" onclick="return confirm('<?= h(t('att.wl_del')) ?>: <?= h($w) ?>?');">×</button></form>
+    <?php endforeach; ?>
+  </div>
+  <?php endif; ?>
+</section>
+
 <div class="grid2">
 <section>
   <h2><?= h(t('att.bannedlist')) ?> <small class="muted"><?= count($banned) ?></small></h2>

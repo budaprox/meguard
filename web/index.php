@@ -52,7 +52,23 @@ $st = $db->prepare("SELECT COUNT(*) FROM messages WHERE $w");
 $st->execute($args);
 $total = (int)$st->fetchColumn();
 
-$st = $db->prepare("SELECT id, ts, ip, auth, sender, recipients, subject, result, action, score, details FROM messages WHERE $w ORDER BY ts DESC, id DESC LIMIT $per OFFSET " . ($page * $per));
+// sorting (time / result / score) on the server, so it applies to the whole filtered result, not just the visible page
+$sort = (string)($_GET['s'] ?? 'time');
+if (!in_array($sort, ['time', 'result', 'score'], true)) $sort = 'time';
+$dir = ($_GET['d'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+$D = strtoupper($dir);
+$sulyossag = "CASE result WHEN 'spam-high' THEN 1 WHEN 'spam-medium' THEN 2 WHEN 'spam-low' THEN 3 WHEN 'autoban' THEN 4
+    WHEN 'blacklisted' THEN 5 WHEN 'error' THEN 6 WHEN 'whitelisted' THEN 7 WHEN 'trusted' THEN 8 WHEN 'released' THEN 9
+    WHEN 'rescanned' THEN 10 WHEN 'pass' THEN 11 WHEN 'outgoing' THEN 12 WHEN 'skipped' THEN 13 ELSE 14 END";
+$order = [
+    'time'   => "ts $D, id $D",
+    // "desc" = most severe first
+    'result' => "$sulyossag " . ($dir === 'desc' ? 'ASC' : 'DESC') . ", ts DESC, id DESC",
+    // rows without a score always last
+    'score'  => "(score IS NULL) ASC, score $D, ts DESC, id DESC",
+][$sort];
+
+$st = $db->prepare("SELECT id, ts, ip, auth, sender, recipients, subject, result, action, score, details FROM messages WHERE $w ORDER BY $order LIMIT $per OFFSET " . ($page * $per));
 $st->execute($args);
 $rows = $st->fetchAll();
 
@@ -85,6 +101,7 @@ page_head(t('log.title'), 'index.php');
 
 <form class="filters card" method="get">
   <input type="search" name="q" value="<?= h($q) ?>" placeholder="<?= h(t('log.search')) ?>">
+  <input type="hidden" name="s" value="<?= h($sort) ?>"><input type="hidden" name="d" value="<?= h($dir) ?>">
   <select name="view">
     <option value="incoming"<?= $view === 'incoming' ? ' selected' : '' ?>><?= h(t('log.incoming')) ?></option>
     <option value="spam"<?= $view === 'spam' ? ' selected' : '' ?>><?= h(t('log.spamonly')) ?></option>
@@ -96,13 +113,23 @@ page_head(t('log.title'), 'index.php');
   <span class="muted"><?= h(t('log.total', ['n' => $total])) ?></span>
 </form>
 
+<?php
+$base = ['q' => $q, 'view' => $view, 'from' => $day1, 'to' => $day2];
+function sort_link(string $key, string $label, string $sort, string $dir, array $base): string
+{
+    $aktiv = $sort === $key;
+    $uj = $aktiv ? ($dir === 'desc' ? 'asc' : 'desc') : 'desc';
+    $nyil = $aktiv ? ($dir === 'desc' ? ' ↓' : ' ↑') : '';
+    return '<a class="sortlink' . ($aktiv ? ' on' : '') . '" href="?' . h(http_build_query($base + ['s' => $key, 'd' => $uj])) . '">' . h($label) . $nyil . '</a>';
+}
+?>
 <?php if (!$rows): ?>
   <p class="muted center"><?= h(t('log.empty')) ?></p>
 <?php else: ?>
 <div class="tablewrap">
 <table class="log">
   <thead><tr>
-    <th><?= h(t('log.time')) ?></th><th><?= h(t('log.result')) ?></th><th class="num"><?= h(t('log.score')) ?></th>
+    <th><?= sort_link('time', t('log.time'), $sort, $dir, $base) ?></th><th><?= sort_link('result', t('log.result'), $sort, $dir, $base) ?></th><th class="num"><?= sort_link('score', t('log.score'), $sort, $dir, $base) ?></th>
     <th><?= h(t('log.sender')) ?></th><th><?= h(t('log.recipient')) ?></th><th><?= h(t('log.subject')) ?></th><th><?= h(t('log.ip')) ?></th>
   </tr></thead>
   <tbody>
@@ -121,7 +148,7 @@ page_head(t('log.title'), 'index.php');
 </table>
 </div>
 <?php if ($total > ($page + 1) * $per): ?>
-  <p class="center"><a class="btn" href="?<?= h(http_build_query(['q' => $q, 'view' => $view, 'from' => $day1, 'to' => $day2, 'p' => $page + 1])) ?>"><?= h(t('log.more')) ?> →</a></p>
+  <p class="center"><a class="btn" href="?<?= h(http_build_query(['q' => $q, 'view' => $view, 'from' => $day1, 'to' => $day2, 's' => $sort, 'd' => $dir, 'p' => $page + 1])) ?>"><?= h(t('log.more')) ?> →</a></p>
 <?php endif; ?>
 <?php endif;
 page_foot();
